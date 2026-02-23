@@ -2,30 +2,67 @@
   <div class="mb-8">
     <h1 class="text-2xl font-bold text-gray-900">New Deployment</h1>
     <p class="mt-2 text-sm text-gray-600">
-      Enter the PR numbers to include in this deployment.
+      Select the PRs to include in this deployment.
     </p>
   </div>
 
   <div class="bg-white shadow sm:rounded-lg">
     <form phx-submit="submit" phx-change="validate" class="space-y-6 p-6">
-      <%!-- PR Numbers Input --%>
+      <%!-- PR Picker --%>
       <div>
-        <label for="pr_numbers" class="block text-sm font-medium text-gray-700">
-          PR Numbers
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          Pull Requests
         </label>
-        <div class="mt-1">
-          <input
-            type="text"
-            name="pr_numbers"
-            id="pr_numbers"
-            value={@pr_numbers_input}
-            placeholder="e.g., 123, 456, 789"
-            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            autofocus
-          />
+        <div
+          id="pr-picker"
+          phx-hook="PRPicker"
+          data-selected-prs={Jason.encode!(@selected_prs)}
+          class="relative"
+        >
+          <%!-- Chips + Input area --%>
+          <div class="flex flex-wrap items-center gap-1.5 min-h-[38px] px-2 py-1.5 border border-gray-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white">
+            <%= for pr <- @selected_prs do %>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <.pr_link number={pr.number} context="picker-chip" class="text-indigo-600 hover:underline text-sm font-medium">
+                  #<%= pr.number %>
+                </.pr_link>
+                <span :if={pr.title} class="text-indigo-500 text-xs truncate max-w-[150px]" title={pr.title}>
+                  <%= pr.title %>
+                </span>
+                <button
+                  type="button"
+                  phx-click="remove_pr"
+                  phx-value-number={pr.number}
+                  class="ml-0.5 text-indigo-400 hover:text-indigo-700 focus:outline-none"
+                  aria-label={"Remove PR ##{pr.number}"}
+                >
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </span>
+            <% end %>
+            <input
+              type="text"
+              data-pr-picker-input
+              placeholder={if @selected_prs == [], do: "Search PRs or type a number...", else: "Add more..."}
+              class="flex-1 min-w-[120px] border-none outline-none focus:ring-0 text-sm p-0.5 bg-transparent"
+              autocomplete="off"
+            />
+          </div>
+
+          <%!-- Dropdown listbox — JS-rendered, LiveView ignores --%>
+          <ul
+            data-pr-picker-listbox
+            phx-update="ignore"
+            id="pr-picker-listbox"
+            class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+            role="listbox"
+          >
+          </ul>
         </div>
         <p class="mt-2 text-sm text-gray-500">
-          Enter PR numbers separated by spaces or commas. You can use formats like "123", "#123", or "PR-123".
+          Select from open PRs targeting staging, or type a PR number and press Enter.
         </p>
       </div>
 

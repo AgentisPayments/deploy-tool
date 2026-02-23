@@ -4,8 +4,9 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {PRPopover} from "./hooks/pr_popover"
+import {PRPicker} from "./hooks/pr_picker"
 
-let Hooks = {PRPopover}
+let Hooks = {PRPopover, PRPicker}
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
