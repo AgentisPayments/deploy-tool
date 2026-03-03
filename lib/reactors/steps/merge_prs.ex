@@ -1,6 +1,6 @@
 defmodule Deploy.Reactors.Steps.MergePRs do
   @moduledoc """
-  Merges PRs sequentially via squash merge.
+  Merges PRs sequentially via rebase merge.
 
   This is a point of no return — compensation logs a warning but cannot undo merges.
   """
@@ -17,7 +17,7 @@ defmodule Deploy.Reactors.Steps.MergePRs do
     |> Enum.reduce_while({:ok, []}, fn pr, {:ok, acc} ->
       with :ok <- maybe_update_branch(client, owner, repo, pr.number, acc),
            :ok <- check_mergeable(client, owner, repo, pr.number, skip_conflicts),
-           {:ok, body} <- Deploy.GitHub.merge_pr(client, owner, repo, pr.number) do
+           {:ok, body} <- Deploy.GitHub.merge_pr(client, owner, repo, pr.number, merge_method: "rebase") do
         merged = %{
           number: pr.number,
           title: pr.title,

@@ -75,7 +75,7 @@ defmodule Deploy.GitHub do
   Merges a pull request.
   """
   def merge_pr(client, owner, repo, pr_number, opts \\ []) do
-    merge_method = Keyword.get(opts, :merge_method, "squash")
+    merge_method = Keyword.get(opts, :merge_method, "rebase")
     commit_title = Keyword.get(opts, :commit_title)
 
     Logger.info("Merging PR ##{pr_number} via #{merge_method}")
