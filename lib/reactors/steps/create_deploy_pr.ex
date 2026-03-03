@@ -10,8 +10,11 @@ defmodule Deploy.Reactors.Steps.CreateDeployPR do
   require Logger
 
   @impl true
-  def run(%{client: client, owner: owner, repo: repo, deploy_branch: deploy_branch}, _context, _options) do
-
+  def run(
+        %{client: client, owner: owner, repo: repo, deploy_branch: deploy_branch},
+        _context,
+        _options
+      ) do
     title = format_title(deploy_branch)
 
     attrs = %{
@@ -35,7 +38,9 @@ defmodule Deploy.Reactors.Steps.CreateDeployPR do
     Logger.info("Compensating: closing deploy PR ##{pr_number}")
 
     case Deploy.GitHub.update_pr(client, owner, repo, pr_number, %{state: "closed"}) do
-      {:ok, _} -> :ok
+      {:ok, _} ->
+        :ok
+
       {:error, reason} ->
         Logger.warning("Failed to close deploy PR ##{pr_number}: #{inspect(reason)}")
         :ok
@@ -45,8 +50,8 @@ defmodule Deploy.Reactors.Steps.CreateDeployPR do
   # deploy-20260201 → "Deploy 2026-02-01"
   defp format_title("deploy-" <> date) do
     <<y::binary-size(4), m::binary-size(2), d::binary-size(2)>> = date
-    "Deploy #{y}-#{m}-#{d}"
+    "Deploy: #{y}-#{m}-#{d}"
   end
 
-  defp format_title(branch), do: "Deploy #{branch}"
+  defp format_title(branch), do: "Deploy: #{branch}"
 end
