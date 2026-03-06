@@ -192,6 +192,18 @@ Create `Deploy.Reactors.CreateDeployPR` reactor with steps:
 5. **UpdatePRDescription** - Add links to all merged PRs
 6. **RequestReview** - Assign reviewer(s)
 
+### Merge Conflict Resolution
+
+When merging multiple feature PRs sequentially, later PRs can conflict with changes introduced by earlier merges. The current behavior halts the deployment on any conflict.
+
+**Proposed approach**: LLM-assisted resolution with mandatory human approval, using a wrapper reactor that leverages Reactor's `compensate/4` → `:retry` semantics. See [`docs/merge-conflict-resolution.md`](merge-conflict-resolution.md) for the full design, including:
+
+- `MergeWithResolution` wrapper reactor architecture
+- `Deploy.ConflictResolver` module (git operations + Claude API)
+- Human-in-the-loop approval flow via PubSub + LiveView
+- Operator actions: approve LLM resolution, confirm manual resolution, or skip PR
+- Bailout conditions, idempotency on retry, and session durability
+
 ### Phase 4: CI and Merge
 
 Create `Deploy.Reactors.WaitAndMerge` reactor with steps:
