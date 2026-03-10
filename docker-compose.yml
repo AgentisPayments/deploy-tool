@@ -8,6 +8,7 @@ services:
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - DEPLOY_REPO_URL=${DEPLOY_REPO_URL}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DATABASE_PATH=/app/data/deploy.db
     volumes:
       - ./data:/app/data

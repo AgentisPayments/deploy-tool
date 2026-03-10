@@ -44,8 +44,8 @@ defmodule Deploy.Reactors.FullDeploy do
     argument :deploy_date, input(:deploy_date)
   end
 
-  # Phase 2: Merge PRs
-  compose :merge_prs, Deploy.Reactors.MergePRs do
+  # Phase 2: Merge PRs (with conflict resolution)
+  compose :merge_prs, Deploy.Reactors.MergeWithResolution do
     argument :deploy_branch, result(:setup, [:branch])
     argument :workspace, result(:setup, [:workspace])
     argument :client, input(:client)

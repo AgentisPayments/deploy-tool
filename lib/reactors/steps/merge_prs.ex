@@ -43,8 +43,18 @@ defmodule Deploy.Reactors.Steps.MergePRs do
 
   defp maybe_update_branch(client, owner, repo, pr_number, _previous_merges) do
     case Deploy.GitHub.update_branch(client, owner, repo, pr_number) do
-      {:ok, _} -> poll_until_mergeable(client, owner, repo, pr_number)
-      {:error, reason} -> {:error, reason}
+      {:ok, _} ->
+        poll_until_mergeable(client, owner, repo, pr_number)
+
+      {:error, reason} when is_binary(reason) ->
+        if String.contains?(reason, "merge conflict") do
+          {:error, {:merge_conflict, pr_number}}
+        else
+          {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -93,7 +103,7 @@ defmodule Deploy.Reactors.Steps.MergePRs do
         poll_until_mergeable(client, owner, repo, pr_number, attempts - 1)
 
       {:ok, _} ->
-        {:error, "PR ##{pr_number} still not mergeable after polling"}
+        {:error, {:merge_conflict, pr_number}}
 
       {:error, reason} ->
         {:error, reason}

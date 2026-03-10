@@ -1,3 +1,115 @@
+<%!-- Conflict Resolution Modal --%>
+<div :if={@conflict} class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+  <div class="flex min-h-full items-start justify-center p-4 pt-16">
+    <div class="relative w-full max-w-6xl bg-white rounded-lg shadow-xl">
+      <%!-- Header --%>
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900">
+          Merge Conflict &mdash; PR #<%= @conflict.pr_number %>: <%= @conflict.pr_context[:title] || @conflict.pr_context["title"] %>
+        </h2>
+      </div>
+
+      <div class="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <%!-- Bailout Banner --%>
+        <%= if @conflict.bailout_reason do %>
+          <div class="rounded-md bg-amber-50 border border-amber-200 p-4">
+            <div class="flex">
+              <svg class="h-5 w-5 text-amber-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+              </svg>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-amber-800">Automatic resolution unavailable</h3>
+                <p class="mt-1 text-sm text-amber-700">
+                  <%= case @conflict.bailout_reason do %>
+                    <% :too_many_files -> %>
+                      Too many conflicted files (more than 5). Please resolve manually or skip this PR.
+                    <% :binary -> %>
+                      Binary files are in conflict. Please resolve manually or skip this PR.
+                    <% :lockfile -> %>
+                      Lock files are in conflict. Please resolve manually or skip this PR.
+                    <% other -> %>
+                      <%= inspect(other) %>
+                  <% end %>
+                </p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <%!-- Conflicted files list --%>
+        <div class="text-sm text-gray-600">
+          <span class="font-medium">Conflicted files:</span>
+          <%= Enum.join(@conflict.files, ", ") %>
+        </div>
+
+        <%!-- Per-file diffs (only when conflict_data is available) --%>
+        <%= if @conflict.conflict_data do %>
+          <%= for {file, data} <- @conflict.conflict_data do %>
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <span class="text-sm font-mono font-medium text-gray-900"><%= file %></span>
+              </div>
+              <div class={"grid gap-px bg-gray-200 #{if @conflict.proposals && Map.has_key?(@conflict.proposals, file), do: "grid-cols-3", else: "grid-cols-2"}"}>
+                <%!-- Ours (deploy branch) --%>
+                <div class="bg-green-50">
+                  <div class="px-3 py-1.5 bg-green-100 text-xs font-medium text-green-800">
+                    Ours (deploy branch)
+                  </div>
+                  <pre class="px-3 py-2 text-xs font-mono overflow-auto max-h-96 whitespace-pre"><%= data.ours %></pre>
+                </div>
+                <%!-- Theirs (PR branch) --%>
+                <div class="bg-blue-50">
+                  <div class="px-3 py-1.5 bg-blue-100 text-xs font-medium text-blue-800">
+                    Theirs (PR branch)
+                  </div>
+                  <pre class="px-3 py-2 text-xs font-mono overflow-auto max-h-96 whitespace-pre"><%= data.theirs %></pre>
+                </div>
+                <%!-- Proposed (only if proposals exist for this file) --%>
+                <%= if @conflict.proposals && Map.has_key?(@conflict.proposals, file) do %>
+                  <div class="bg-purple-50">
+                    <div class="px-3 py-1.5 bg-purple-100 text-xs font-medium text-purple-800">
+                      Proposed Resolution
+                    </div>
+                    <pre class="px-3 py-2 text-xs font-mono overflow-auto max-h-96 whitespace-pre"><%= @conflict.proposals[file] %></pre>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%!-- Action Buttons --%>
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+        <button
+          type="button"
+          phx-click="skip_pr"
+          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-50"
+        >
+          Skip This PR
+        </button>
+        <button
+          type="button"
+          phx-click="manual_resolution"
+          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        >
+          I Resolved It Manually
+        </button>
+        <%= if @conflict.proposals && @conflict.proposals != %{} do %>
+          <button
+            type="button"
+            phx-click="approve_resolution"
+            class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+          >
+            Approve Resolution
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="space-y-6">
   <%!-- Header --%>
   <div class="sm:flex sm:items-center sm:justify-between">

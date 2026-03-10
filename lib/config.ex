@@ -20,6 +20,10 @@ defmodule Deploy.Config do
     System.get_env("SLACK_WEBHOOK_URL")
   end
 
+  def anthropic_api_key do
+    System.get_env("ANTHROPIC_API_KEY")
+  end
+
   def github_owner do
     # Extract from repo URL, e.g., "myorg" from "https://github.com/myorg/myrepo.git"
     repo_url()

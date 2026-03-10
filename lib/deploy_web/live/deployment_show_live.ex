@@ -33,7 +33,8 @@ defmodule DeployWeb.DeploymentShowLive do
            steps: deployment.steps,
            merged_prs: deployment.merged_prs,
            error: nil,
-           is_active: Registry.is_active?(deployment.id)
+           is_active: Registry.is_active?(deployment.id),
+           conflict: nil
          )}
     end
   end
@@ -88,6 +89,48 @@ defmodule DeployWeb.DeploymentShowLive do
          socket
          |> assign(error: "Deployment is not running")}
     end
+  end
+
+  def handle_event("approve_resolution", _params, socket) do
+    conflict = socket.assigns.conflict
+    deployment_id = socket.assigns.deployment.id
+    topic = "deployment:#{deployment_id}:conflicts"
+
+    Phoenix.PubSub.broadcast(
+      Deploy.PubSub,
+      topic,
+      {:conflict_decision, conflict.id, :approve, conflict.proposals}
+    )
+
+    {:noreply, assign(socket, conflict: nil)}
+  end
+
+  def handle_event("manual_resolution", _params, socket) do
+    conflict = socket.assigns.conflict
+    deployment_id = socket.assigns.deployment.id
+    topic = "deployment:#{deployment_id}:conflicts"
+
+    Phoenix.PubSub.broadcast(
+      Deploy.PubSub,
+      topic,
+      {:conflict_decision, conflict.id, :manual}
+    )
+
+    {:noreply, assign(socket, conflict: nil)}
+  end
+
+  def handle_event("skip_pr", _params, socket) do
+    conflict = socket.assigns.conflict
+    deployment_id = socket.assigns.deployment.id
+    topic = "deployment:#{deployment_id}:conflicts"
+
+    Phoenix.PubSub.broadcast(
+      Deploy.PubSub,
+      topic,
+      {:conflict_decision, conflict.id, :skip}
+    )
+
+    {:noreply, assign(socket, conflict: nil)}
   end
 
   @impl true
@@ -151,6 +194,11 @@ defmodule DeployWeb.DeploymentShowLive do
        steps: deployment.steps,
        is_active: true
      )}
+  end
+
+  def handle_info({:conflict_proposed, conflict_id, data}, socket) do
+    conflict = Map.put(data, :id, conflict_id)
+    {:noreply, assign(socket, conflict: conflict)}
   end
 
   def handle_info({:phase_started, _id, _phase}, socket), do: {:noreply, socket}
